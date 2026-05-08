@@ -6,9 +6,9 @@
 """
 
 import json
-from typing import Dict, List, Any, Optional
 from collections import deque
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, List, Optional
 
 import redis.asyncio as aioredis
 import structlog
@@ -21,6 +21,7 @@ logger = structlog.get_logger()
 @dataclass
 class DialogueTurn:
     """对话轮次"""
+
     user_input: str
     agent_response: str
     intent: str
@@ -56,10 +57,7 @@ class DialogueHistory:
     async def initialize(self):
         """初始化 Redis 连接"""
         try:
-            self._redis = aioredis.from_url(
-                config.redis.url,
-                decode_responses=True
-            )
+            self._redis = aioredis.from_url(config.redis.url, decode_responses=True)
             await self._redis.ping()
             self._connected = True
             logger.info("对话历史 Redis 连接成功")
@@ -77,14 +75,14 @@ class DialogueHistory:
         agent_response: str,
         intent: str,
         skill_used: str,
-        context: Dict[str, Any] = None
+        context: Dict[str, Any] = None,
     ):
         turn = DialogueTurn(
             user_input=user_input,
             agent_response=agent_response,
             intent=intent,
             skill_used=skill_used,
-            context=context or {}
+            context=context or {},
         )
 
         # 内存缓存
@@ -101,18 +99,13 @@ class DialogueHistory:
             try:
                 key = self._redis_key(user_id)
                 turns_json = json.dumps(
-                    [t.to_dict() for t in self.history[user_id]],
-                    ensure_ascii=False
+                    [t.to_dict() for t in self.history[user_id]], ensure_ascii=False
                 )
                 await self._redis.set(key, turns_json)
             except Exception as e:
                 logger.warning("保存对话历史到 Redis 失败", user_id=user_id, error=str(e))
 
-        logger.debug(
-            "添加对话轮次",
-            user_id=user_id,
-            turn_count=len(self.history[user_id])
-        )
+        logger.debug("添加对话轮次", user_id=user_id, turn_count=len(self.history[user_id]))
 
     async def _load_from_redis(self, user_id: str):
         """从 Redis 加载历史到内存"""
@@ -146,7 +139,7 @@ class DialogueHistory:
             "recent_intents": [],
             "recent_skills": [],
             "recent_queries": [],
-            "turn_count": len(history)
+            "turn_count": len(history),
         }
 
         for turn in history:

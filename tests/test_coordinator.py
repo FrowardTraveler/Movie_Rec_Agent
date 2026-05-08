@@ -4,8 +4,9 @@
 测试 MultiAgentCoordinator 的请求处理、思考步骤、错误处理
 """
 
-import pytest
 import time
+
+import pytest
 
 from agent.multi_agent.coordinator import (
     MultiAgentCoordinator,
@@ -23,10 +24,7 @@ def coordinator():
 def test_thinking_step_creation():
     """测试思考步骤创建"""
     step = ThinkingStep(
-        type="test",
-        content="测试内容",
-        agent_name="test_agent",
-        timestamp=1234567890.0
+        type="test", content="测试内容", agent_name="test_agent", timestamp=1234567890.0
     )
     assert step.type == "test"
     assert step.content == "测试内容"
@@ -37,7 +35,7 @@ def test_thinking_step_creation():
 def test_add_thinking_step(coordinator):
     """测试添加思考步骤"""
     coordinator._add_thinking_step("init", "[初始化] 测试")
-    
+
     assert len(coordinator._thinking_queue) == 1
     step = coordinator._thinking_queue[0]
     assert step.type == "init"
@@ -47,13 +45,13 @@ def test_add_thinking_step(coordinator):
 def test_add_thinking_step_with_callback(coordinator):
     """测试添加思考步骤时触发回调"""
     captured_steps = []
-    
+
     def capture_callback(step):
         captured_steps.append(step)
-    
+
     coordinator._stream_callback = capture_callback
     coordinator._add_thinking_step("test", "回调测试", "agent1")
-    
+
     assert len(captured_steps) == 1
     assert captured_steps[0].content == "回调测试"
     assert captured_steps[0].agent_name == "agent1"
@@ -63,7 +61,7 @@ def test_get_thinking_steps(coordinator):
     """测试获取思考步骤"""
     coordinator._add_thinking_step("step1", "第一步")
     coordinator._add_thinking_step("step2", "第二步")
-    
+
     steps = coordinator.get_thinking_steps(clear=False)
     assert len(steps) == 2
     assert steps[0]["type"] == "step1"
@@ -73,10 +71,10 @@ def test_get_thinking_steps(coordinator):
 def test_get_thinking_steps_clears(coordinator):
     """测试获取思考步骤后清空"""
     coordinator._add_thinking_step("step1", "第一步")
-    
+
     steps = coordinator.get_thinking_steps(clear=True)
     assert len(steps) == 1
-    
+
     steps2 = coordinator.get_thinking_steps(clear=False)
     assert len(steps2) == 0
 
@@ -126,7 +124,7 @@ def test_thinking_step_timestamp():
     before = time.time()
     step = ThinkingStep(type="test", content="test", timestamp=time.time())
     after = time.time()
-    
+
     assert before <= step.timestamp <= after
 
 

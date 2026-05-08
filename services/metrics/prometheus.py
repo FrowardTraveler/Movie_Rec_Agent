@@ -4,7 +4,7 @@ Prometheus 指标收集模块
 收集 API QPS、延迟、缓存命中率等关键指标
 """
 
-from prometheus_client import Counter, Histogram, Gauge, generate_latest, REGISTRY
+from prometheus_client import REGISTRY, Counter, Gauge, Histogram, generate_latest
 
 # HTTP 请求计数器
 http_requests_total = Counter(
@@ -144,16 +144,26 @@ def update_recommendation_metrics(strategy: str, time_window: str, metrics: dict
     """更新推荐质量指标"""
     try:
         if "ctr" in metrics:
-            recommendation_ctr.labels(strategy=strategy, time_window=time_window).set(metrics["ctr"])
+            recommendation_ctr.labels(strategy=strategy, time_window=time_window).set(
+                metrics["ctr"]
+            )
         if "avg_rating" in metrics:
-            recommendation_avg_rating.labels(strategy=strategy, time_window=time_window).set(metrics["avg_rating"])
+            recommendation_avg_rating.labels(strategy=strategy, time_window=time_window).set(
+                metrics["avg_rating"]
+            )
         if "hit_rate_at_5" in metrics:
-            recommendation_hit_rate.labels(strategy=strategy, k="5", time_window=time_window).set(metrics["hit_rate_at_5"])
+            recommendation_hit_rate.labels(strategy=strategy, k="5", time_window=time_window).set(
+                metrics["hit_rate_at_5"]
+            )
         if "hit_rate_at_10" in metrics:
-            recommendation_hit_rate.labels(strategy=strategy, k="10", time_window=time_window).set(metrics["hit_rate_at_10"])
+            recommendation_hit_rate.labels(strategy=strategy, k="10", time_window=time_window).set(
+                metrics["hit_rate_at_10"]
+            )
         if "satisfaction_index" in metrics:
-            recommendation_satisfaction_index.labels(strategy=strategy, time_window=time_window).set(metrics["satisfaction_index"])
-    except Exception as e:
+            recommendation_satisfaction_index.labels(
+                strategy=strategy, time_window=time_window
+            ).set(metrics["satisfaction_index"])
+    except Exception:
         pass
 
 

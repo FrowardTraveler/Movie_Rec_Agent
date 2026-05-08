@@ -5,17 +5,16 @@
 """
 
 import pytest
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from fastapi.exceptions import RequestValidationError
 
 from api.exceptions import (
     AppError,
+    BadRequestError,
+    ErrorCode,
     ForbiddenError,
     NotFoundError,
-    BadRequestError,
     ServiceUnavailableError,
-    ErrorCode,
     _build_error_response,
     register_exception_handlers,
 )
@@ -50,6 +49,7 @@ def app():
     @test_app.get("/test/http-exception")
     async def trigger_http_exception():
         from fastapi import HTTPException
+
         raise HTTPException(status_code=403, detail="HTTP异常测试")
 
     @test_app.get("/test/validation")

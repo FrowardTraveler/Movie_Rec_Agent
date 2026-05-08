@@ -4,14 +4,14 @@
 统一所有 API 的错误响应格式
 """
 
-from typing import Optional, Any, Dict
 from enum import Enum
-
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
+from typing import Any, Dict, Optional
 
 import structlog
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
 from services.tracing.request_context import get_request_id
 
 logger = structlog.get_logger()
@@ -19,6 +19,7 @@ logger = structlog.get_logger()
 
 class ErrorCode(str, Enum):
     """错误码枚举"""
+
     INTERNAL_ERROR = "INTERNAL_ERROR"
     VALIDATION_ERROR = "VALIDATION_ERROR"
     UNAUTHORIZED = "UNAUTHORIZED"
@@ -32,6 +33,7 @@ class ErrorCode(str, Enum):
 
 class AppError(Exception):
     """应用自定义异常基类"""
+
     def __init__(
         self,
         code: ErrorCode,
@@ -48,6 +50,7 @@ class AppError(Exception):
 
 class ForbiddenError(AppError):
     """权限不足"""
+
     def __init__(self, message: str = "无权执行此操作", details: Optional[Dict] = None):
         super().__init__(
             code=ErrorCode.FORBIDDEN,
@@ -59,6 +62,7 @@ class ForbiddenError(AppError):
 
 class NotFoundError(AppError):
     """资源不存在"""
+
     def __init__(self, message: str = "资源不存在", details: Optional[Dict] = None):
         super().__init__(
             code=ErrorCode.NOT_FOUND,
@@ -70,6 +74,7 @@ class NotFoundError(AppError):
 
 class BadRequestError(AppError):
     """请求参数错误"""
+
     def __init__(self, message: str = "请求参数错误", details: Optional[Dict] = None):
         super().__init__(
             code=ErrorCode.BAD_REQUEST,
@@ -81,6 +86,7 @@ class BadRequestError(AppError):
 
 class ServiceUnavailableError(AppError):
     """服务不可用"""
+
     def __init__(self, message: str = "服务暂时不可用", details: Optional[Dict] = None):
         super().__init__(
             code=ErrorCode.SERVICE_UNAVAILABLE,
@@ -106,7 +112,7 @@ def _build_error_response(
         error_detail["details"] = details
     if request_id:
         error_detail["request_id"] = request_id
-    
+
     return {
         "success": False,
         "error": error_detail,
@@ -148,7 +154,7 @@ def register_exception_handlers(app: FastAPI):
             detail=exc.detail,
             request_id=rid,
         )
-        
+
         code_map = {
             400: ErrorCode.BAD_REQUEST,
             401: ErrorCode.UNAUTHORIZED,
@@ -159,7 +165,7 @@ def register_exception_handlers(app: FastAPI):
             503: ErrorCode.SERVICE_UNAVAILABLE,
         }
         code = code_map.get(exc.status_code, ErrorCode.INTERNAL_ERROR)
-        
+
         return JSONResponse(
             status_code=exc.status_code,
             content=_build_error_response(
@@ -175,21 +181,21 @@ def register_exception_handlers(app: FastAPI):
         """处理请求参数校验错误"""
         rid = get_request_id()
         errors = exc.errors()
-        
+
         error_messages = []
         for err in errors:
             field = ".".join(str(loc) for loc in err.get("loc", []))
             msg = err.get("msg", "")
             error_messages.append(f"{field}: {msg}")
-        
+
         message = "; ".join(error_messages) if error_messages else "参数校验失败"
-        
+
         logger.warning(
             "参数校验失败",
             errors=errors,
             request_id=rid,
         )
-        
+
         return JSONResponse(
             status_code=400,
             content=_build_error_response(
@@ -211,7 +217,7 @@ def register_exception_handlers(app: FastAPI):
             exc_info=True,
             request_id=rid,
         )
-        
+
         return JSONResponse(
             status_code=500,
             content=_build_error_response(

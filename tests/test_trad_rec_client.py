@@ -4,12 +4,13 @@
 测试 TraditionalRecommendationClient 的 URL 配置、超时、熔断、降级
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from services.integration.trad_rec_client import (
-    TraditionalRecommendationClient,
     RecommendationItem,
+    TraditionalRecommendationClient,
 )
 
 
@@ -69,6 +70,7 @@ async def test_client_timeout_config():
         _HTTP_CONNECT_TIMEOUT,
         _HTTP_TOTAL_TIMEOUT,
     )
+
     assert _HTTP_CONNECT_TIMEOUT == 5
     assert _HTTP_TOTAL_TIMEOUT == 15
 
@@ -90,18 +92,20 @@ async def test_get_recommendations_mock_session(client):
     """测试获取推荐结果（模拟 HTTP）"""
     mock_response = MagicMock()
     mock_response.status = 200
-    mock_response.json = AsyncMock(return_value={
-        "items": [
-            {
-                "movie_id": 1,
-                "title": "Test Movie",
-                "genres": ["Action"],
-                "score": 0.9,
-                "recall_type": "youtubednn",
-            }
-        ],
-        "ranking_strategy": "deepfm",
-    })
+    mock_response.json = AsyncMock(
+        return_value={
+            "items": [
+                {
+                    "movie_id": 1,
+                    "title": "Test Movie",
+                    "genres": ["Action"],
+                    "score": 0.9,
+                    "recall_type": "youtubednn",
+                }
+            ],
+            "ranking_strategy": "deepfm",
+        }
+    )
     mock_response.__aenter__ = AsyncMock(return_value=mock_response)
     mock_response.__aexit__ = AsyncMock(return_value=None)
 
@@ -140,10 +144,12 @@ async def test_search_movie_by_title_mock(client):
     """测试搜索电影（模拟 HTTP）"""
     mock_response = MagicMock()
     mock_response.status = 200
-    mock_response.json = AsyncMock(return_value=[
-        {"movie_id": 1, "title": "Test Movie", "genres": ["Action"]},
-        {"movie_id": 2, "title": "Another Movie", "genres": ["Drama"]},
-    ])
+    mock_response.json = AsyncMock(
+        return_value=[
+            {"movie_id": 1, "title": "Test Movie", "genres": ["Action"]},
+            {"movie_id": 2, "title": "Another Movie", "genres": ["Drama"]},
+        ]
+    )
     mock_response.__aenter__ = AsyncMock(return_value=mock_response)
     mock_response.__aexit__ = AsyncMock(return_value=None)
 
@@ -164,10 +170,12 @@ async def test_search_movie_by_title_exact_match(client):
     """测试精确匹配优先"""
     mock_response = MagicMock()
     mock_response.status = 200
-    mock_response.json = AsyncMock(return_value=[
-        {"movie_id": 1, "title": "Another Test", "genres": []},
-        {"movie_id": 2, "title": "Test Movie", "genres": ["Action"]},
-    ])
+    mock_response.json = AsyncMock(
+        return_value=[
+            {"movie_id": 1, "title": "Another Test", "genres": []},
+            {"movie_id": 2, "title": "Test Movie", "genres": ["Action"]},
+        ]
+    )
     mock_response.__aenter__ = AsyncMock(return_value=mock_response)
     mock_response.__aexit__ = AsyncMock(return_value=None)
 
@@ -206,12 +214,14 @@ async def test_search_movie_by_title_empty(client):
 async def test_resolve_llm_movie_ids(client):
     """测试 LLM 电影 ID 解析"""
     # 模拟搜索方法
-    client.search_movie_by_title = AsyncMock(return_value={
-        "movie_id": 42,
-        "title": "Resolved Movie",
-        "genres": ["Sci-Fi"],
-        "imdb_rating": 8.5,
-    })
+    client.search_movie_by_title = AsyncMock(
+        return_value={
+            "movie_id": 42,
+            "title": "Resolved Movie",
+            "genres": ["Sci-Fi"],
+            "imdb_rating": 8.5,
+        }
+    )
     client._initialized = True
 
     llm_items = [
@@ -282,6 +292,7 @@ async def test_health_check_failure(client):
 async def test_update_user_profile_no_redis():
     """测试无 Redis 时更新用户偏好"""
     import sys
+
     module = sys.modules["services.integration.trad_rec_client"]
     original_redis = module.redis_client
     try:

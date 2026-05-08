@@ -5,6 +5,7 @@
 """
 
 import pytest
+
 from skills.search.search_skill import SearchSkill
 
 
@@ -31,12 +32,8 @@ def test_search_skill_priority(search_skill):
 
 async def test_search_execution(search_skill):
     """测试搜索技能执行"""
-    result = await search_skill.execute(
-        query="复仇者联盟",
-        user_id="test_user",
-        top_k=3
-    )
-    
+    result = await search_skill.execute(query="复仇者联盟", user_id="test_user", top_k=3)
+
     assert result["success"] is True
     assert "response" in result
     assert "复仇者联盟" in result["response"]
@@ -45,12 +42,8 @@ async def test_search_execution(search_skill):
 
 async def test_search_empty_query(search_skill):
     """测试空查询"""
-    result = await search_skill.execute(
-        query="",
-        user_id="test_user",
-        top_k=5
-    )
-    
+    result = await search_skill.execute(query="", user_id="test_user", top_k=5)
+
     assert result["success"] is True
     assert "response" in result
 

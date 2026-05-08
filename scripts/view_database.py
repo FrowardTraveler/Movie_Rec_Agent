@@ -1,10 +1,11 @@
 """查看 RAG 数据库内容统计"""
+
 import json
 from pathlib import Path
 
 # 读取数据
 data_file = Path(__file__).parent.parent / "data" / "movies_rich.json"
-with open(data_file, 'r', encoding='utf-8') as f:
+with open(data_file, "r", encoding="utf-8") as f:
     movies = json.load(f)
 
 print("=" * 60)
@@ -15,8 +16,8 @@ print(f"电影总数: {len(movies)}")
 # 年份分布
 years = []
 for m in movies:
-    y = m.get('year', 0)
-    if isinstance(y, str) and y != '未知':
+    y = m.get("year", 0)
+    if isinstance(y, str) and y != "未知":
         try:
             y = int(y)
         except:
@@ -28,44 +29,44 @@ for m in movies:
 print(f"\n年份范围: {min(years)} - {max(years)}")
 
 # 评分统计
-ratings = [m.get('rating', 0) for m in movies if m.get('rating', 0) > 0]
-print(f"有评分的电影: {len(ratings)} ({len(ratings)/len(movies)*100:.1f}%)")
+ratings = [m.get("rating", 0) for m in movies if m.get("rating", 0) > 0]
+print(f"有评分的电影: {len(ratings)} ({len(ratings) / len(movies) * 100:.1f}%)")
 if ratings:
-    print(f"平均评分: {sum(ratings)/len(ratings):.2f}")
+    print(f"平均评分: {sum(ratings) / len(ratings):.2f}")
     print(f"最高评分: {max(ratings)}")
     print(f"最低评分: {min(ratings)}")
 
 # 海报统计
-posters = [m for m in movies if m.get('poster')]
-print(f"\n有海报的电影: {len(posters)} ({len(posters)/len(movies)*100:.1f}%)")
+posters = [m for m in movies if m.get("poster")]
+print(f"\n有海报的电影: {len(posters)} ({len(posters) / len(movies) * 100:.1f}%)")
 
 # 类型统计
 all_genres = {}
 for m in movies:
-    genres = m.get('genres', '').split(',')
+    genres = m.get("genres", "").split(",")
     for g in genres:
         g = g.strip()
-        if g and g != '未知':
+        if g and g != "未知":
             all_genres[g] = all_genres.get(g, 0) + 1
 
-print(f"\n电影类型分布:")
+print("\n电影类型分布:")
 for genre, count in sorted(all_genres.items(), key=lambda x: x[1], reverse=True):
     print(f"  {genre}: {count} 部")
 
 # IMDb ID 统计
-imdb_ids = [m for m in movies if m.get('imdb_id')]
-print(f"\n有 IMDb ID 的电影: {len(imdb_ids)} ({len(imdb_ids)/len(movies)*100:.1f}%)")
+imdb_ids = [m for m in movies if m.get("imdb_id")]
+print(f"\n有 IMDb ID 的电影: {len(imdb_ids)} ({len(imdb_ids) / len(movies) * 100:.1f}%)")
 
 # 描述统计
-overviews = [m for m in movies if m.get('overview')]
-print(f"有描述的电影: {len(overviews)} ({len(overviews)/len(movies)*100:.1f}%)")
+overviews = [m for m in movies if m.get("overview")]
+print(f"有描述的电影: {len(overviews)} ({len(overviews) / len(movies) * 100:.1f}%)")
 
 # 数据来源
 sources = {}
 for m in movies:
-    source = m.get('source', 'unknown')
+    source = m.get("source", "unknown")
     sources[source] = sources.get(source, 0) + 1
-print(f"\n数据来源:")
+print("\n数据来源:")
 for source, count in sources.items():
     print(f"  {source}: {count} 部")
 

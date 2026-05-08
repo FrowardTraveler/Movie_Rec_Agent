@@ -4,9 +4,9 @@
 测试 CircuitBreaker 的三种状态转换、重试机制、熔断保护
 """
 
-import pytest
 import asyncio
-import time
+
+import pytest
 
 from services.circuit_breaker import (
     CircuitBreaker,
@@ -30,6 +30,7 @@ def breaker():
 
 async def test_normal_call(breaker):
     """测试正常调用"""
+
     async def success_func():
         return "ok"
 
@@ -40,6 +41,7 @@ async def test_normal_call(breaker):
 
 async def test_failure_triggers_circuit(breaker):
     """测试连续失败触发熔断"""
+
     async def failing_func():
         raise ValueError("service down")
 
@@ -55,6 +57,7 @@ async def test_failure_triggers_circuit(breaker):
 
 async def test_open_state_rejects_calls(breaker):
     """测试熔断状态拒绝请求"""
+
     async def failing_func():
         raise ValueError("service down")
 
@@ -70,6 +73,7 @@ async def test_open_state_rejects_calls(breaker):
 
 async def test_half_open_recovery(breaker):
     """测试半开状态自动恢复"""
+
     async def failing_func():
         raise ValueError("service down")
 
@@ -93,6 +97,7 @@ async def test_half_open_recovery(breaker):
 
 async def test_half_open_failed_again(breaker):
     """测试半开状态试探失败后继续熔断"""
+
     async def failing_func():
         raise ValueError("service down")
 
@@ -114,6 +119,7 @@ async def test_half_open_failed_again(breaker):
 
 def test_remaining_seconds(breaker):
     """测试剩余时间计算"""
+
     async def failing_func():
         raise ValueError("service down")
 
@@ -133,6 +139,7 @@ def test_remaining_seconds(breaker):
 
 async def test_manual_reset(breaker):
     """测试手动重置熔断器"""
+
     async def failing_func():
         raise ValueError("service down")
 
@@ -151,6 +158,7 @@ async def test_manual_reset(breaker):
 
 async def test_get_stats(breaker):
     """测试获取熔断器状态"""
+
     async def success_func():
         return "ok"
 
@@ -175,6 +183,7 @@ def test_retryable_exceptions():
 
 async def test_call_sync(breaker):
     """测试同步函数调用"""
+
     def success_func():
         return "sync-ok"
 
@@ -184,6 +193,7 @@ async def test_call_sync(breaker):
 
 async def test_call_sync_failure(breaker):
     """测试同步函数失败"""
+
     def failing_func():
         raise RuntimeError("sync-error")
 

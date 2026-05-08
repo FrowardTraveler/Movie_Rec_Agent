@@ -5,13 +5,13 @@
 """
 
 from pathlib import Path
-from typing import Dict, Any, List, Optional, TypedDict, Sequence
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
+from typing import Any, Dict, List, Optional, Sequence, TypedDict
 
 from dotenv import load_dotenv
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 
 # 加载 .env 文件
-env_path = Path(__file__).parent.parent.parent / '.env'
+env_path = Path(__file__).parent.parent.parent / ".env"
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
 
@@ -22,8 +22,10 @@ logger = structlog.get_logger()
 
 # ==================== 共享状态定义 ====================
 
+
 class AgentResult(TypedDict):
     """Agent执行结果"""
+
     agent_name: str
     success: bool
     data: Any
@@ -32,6 +34,7 @@ class AgentResult(TypedDict):
 
 class MultiAgentState(TypedDict):
     """多Agent共享状态"""
+
     user_input: str
     user_id: str
     task_plan: List[Dict]  # 任务计划
@@ -49,28 +52,29 @@ class MultiAgentState(TypedDict):
 
 # ==================== Agent基类 ====================
 
+
 class BaseAgent:
     """Agent基类"""
-    
+
     name: str = "base_agent"
     description: str = "基础Agent"
-    
+
     def __init__(self, llm_router=None):
         self.llm_router = llm_router
         self._initialized = False
-    
+
     async def initialize(self):
         """初始化Agent"""
         self._initialized = True
         logger.info(f"{self.name} 初始化完成")
-    
+
     async def execute(self, state: MultiAgentState) -> MultiAgentState:
         """
         执行Agent任务
-        
+
         Args:
             state: 多Agent共享状态
-            
+
         Returns:
             更新后的状态
         """

@@ -4,24 +4,25 @@
 测试 request_id 生成、上下文注入、PerformanceTracker
 """
 
-import pytest
 import time
 
+import pytest
+
 from services.tracing.request_context import (
-    generate_request_id,
-    generate_span_id,
-    set_request_id,
-    set_user_id,
-    set_span_id,
-    get_request_id,
-    get_user_id,
-    get_span_id,
-    get_context_dict,
-    clear_context,
     PerformanceTracker,
     TracingLogger,
-    get_tracing_logger,
     _inject_context,
+    clear_context,
+    generate_request_id,
+    generate_span_id,
+    get_context_dict,
+    get_request_id,
+    get_span_id,
+    get_tracing_logger,
+    get_user_id,
+    set_request_id,
+    set_span_id,
+    set_user_id,
 )
 
 
@@ -65,7 +66,7 @@ def test_get_context_dict():
     set_request_id("req-xyz")
     set_user_id("user-999")
     set_span_id("span-def")
-    
+
     ctx = get_context_dict()
     assert ctx["request_id"] == "req-xyz"
     assert ctx["user_id"] == "user-999"
@@ -77,9 +78,9 @@ def test_clear_context():
     set_request_id("req-clear")
     set_user_id("user-clear")
     set_span_id("span-clear")
-    
+
     clear_context()
-    
+
     assert get_request_id() is None
     assert get_user_id() is None
     assert get_span_id() is None
@@ -90,10 +91,10 @@ def test_inject_context():
     set_request_id("req-inject")
     set_user_id("user-inject")
     set_span_id("span-inject")
-    
+
     kwargs = {"extra_field": "value"}
     result = _inject_context(kwargs)
-    
+
     assert result["request_id"] == "req-inject"
     assert result["user_id"] == "user-inject"
     assert result["span_id"] == "span-inject"
@@ -104,10 +105,10 @@ def test_inject_context_partial():
     """测试部分上下文注入（只设置 request_id）"""
     clear_context()
     set_request_id("req-partial")
-    
+
     kwargs = {}
     result = _inject_context(kwargs)
-    
+
     assert result["request_id"] == "req-partial"
     assert "user_id" not in result
     assert "span_id" not in result
@@ -149,7 +150,7 @@ def test_performance_tracker_milestone():
     tracker.milestone("init")
     time.sleep(0.01)
     tracker.milestone("process")
-    
+
     summary = tracker.get_summary()
     assert len(summary) == 2
     assert summary[0]["name"] == "init"
@@ -160,7 +161,7 @@ def test_performance_tracker_get_total():
     """测试获取总耗时"""
     tracker = PerformanceTracker()
     time.sleep(0.01)
-    
+
     total_ms = tracker.get_total_ms()
     assert total_ms > 0
 
@@ -170,7 +171,7 @@ def test_performance_tracker_milestone_duration():
     tracker = PerformanceTracker()
     time.sleep(0.05)
     tracker.milestone("slow_op")
-    
+
     summary = tracker.get_summary()
     assert summary[0]["duration_ms"] > 0
     assert summary[0]["duration_ms"] >= 40
@@ -180,10 +181,10 @@ def test_multiple_request_ids_isolation():
     """测试多个请求 ID 的隔离"""
     set_request_id("req-first")
     first_id = get_request_id()
-    
+
     set_request_id("req-second")
     second_id = get_request_id()
-    
+
     assert first_id == "req-first"
     assert second_id == "req-second"
 
@@ -191,7 +192,7 @@ def test_multiple_request_ids_isolation():
 def test_context_default_values():
     """测试上下文默认值"""
     clear_context()
-    
+
     assert get_request_id() is None
     assert get_user_id() is None
     assert get_span_id() is None

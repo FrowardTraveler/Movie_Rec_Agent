@@ -5,9 +5,9 @@
 """
 
 from services.integration.trad_rec_client import (
-    trad_rec_client,
-    TraditionalRecommendationClient,
     RecommendationItem,
+    TraditionalRecommendationClient,
+    trad_rec_client,
 )
 
 __all__ = ["trad_rec_client", "TraditionalRecommendationClient", "RecommendationItem"]

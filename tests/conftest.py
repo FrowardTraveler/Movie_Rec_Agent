@@ -11,8 +11,10 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-import pytest
 import asyncio
+
+import pytest
+
 
 @pytest.fixture
 def event_loop():
@@ -21,9 +23,8 @@ def event_loop():
     yield loop
     loop.close()
 
+
 # 配置 pytest-asyncio 模式
 def pytest_configure(config):
     """配置 pytest"""
-    config.addinivalue_line(
-        "markers", "asyncio: mark test as async"
-    )
+    config.addinivalue_line("markers", "asyncio: mark test as async")

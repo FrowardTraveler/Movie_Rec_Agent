@@ -1,1 +1,1 @@
-from .feedback_service import feedback_service, FeedbackService
+from .feedback_service import FeedbackService, feedback_service

@@ -5,7 +5,6 @@
 """
 
 import pytest
-import asyncio
 
 from skills.conversation.conversation_skill import ConversationSkill
 
@@ -20,7 +19,7 @@ def test_classify_greeting(conversation_skill):
     """测试问候意图分类"""
     intent = conversation_skill._classify_intent("你好")
     assert intent == "greeting"
-    
+
     intent = conversation_skill._classify_intent("嗨")
     assert intent == "greeting"
 
@@ -29,7 +28,7 @@ def test_classify_emotion(conversation_skill):
     """测试情感意图分类"""
     intent = conversation_skill._classify_intent("我今天很开心")
     assert intent == "emotion"
-    
+
     intent = conversation_skill._classify_intent("心情不好")
     assert intent == "emotion"
 
@@ -38,7 +37,7 @@ def test_classify_follow_up(conversation_skill):
     """测试追问意图分类"""
     intent = conversation_skill._classify_intent("还有吗")
     assert intent == "follow_up"
-    
+
     intent = conversation_skill._classify_intent("换一个")
     assert intent == "follow_up"
 
@@ -58,11 +57,8 @@ def test_fallback_emotion(conversation_skill):
 @pytest.mark.asyncio
 async def test_execute_conversation(conversation_skill):
     """测试对话技能执行"""
-    result = await conversation_skill.execute(
-        user_input="你好",
-        user_id="test_user"
-    )
-    
+    result = await conversation_skill.execute(user_input="你好", user_id="test_user")
+
     assert result["success"] is True
     assert "response" in result
     assert result["intent"] == "greeting"

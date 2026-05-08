@@ -6,11 +6,11 @@ JWT 认证模块
 """
 
 import os
-import structlog
-from typing import Optional
 from dataclasses import dataclass
+from typing import Optional
 
-from jose import jwt, JWTError, ExpiredSignatureError
+import structlog
+from jose import ExpiredSignatureError, JWTError, jwt
 
 logger = structlog.get_logger()
 
@@ -29,6 +29,7 @@ def _get_secret_key() -> str:
 @dataclass
 class AuthUser:
     """认证用户信息"""
+
     user_id: int
     username: str = ""
 
@@ -36,33 +37,33 @@ class AuthUser:
 def verify_token(token: str) -> Optional[AuthUser]:
     """
     验证 JWT token，返回用户信息
-    
+
     复用传统推荐系统的 secret_key，实现跨系统认证
     """
     if not _is_auth_enabled():
         return None
-    
+
     secret_key = _get_secret_key()
     if not secret_key:
         return None
-    
+
     try:
         payload = jwt.decode(token, secret_key, algorithms=["HS256"])
-        
+
         user_id_str = payload.get("sub")
         if user_id_str is None:
             return None
-        
+
         try:
             user_id = int(user_id_str)
         except (ValueError, TypeError):
             return None
-        
+
         return AuthUser(
             user_id=user_id,
             username=payload.get("username", ""),
         )
-        
+
     except ExpiredSignatureError:
         logger.warning("JWT token 已过期")
         return None

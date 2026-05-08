@@ -6,20 +6,21 @@
 
 使用方式：
     from services.tracing.request_context import set_request_id, get_request_id
-    
+
     # API 入口设置 request_id
     set_request_id("abc-123-def")
-    
+
     # 之后所有 logger.info() 自动携带 request_id 字段
 """
 
-import uuid
+import contextvars
 import time
+import uuid
 from typing import Optional
 
-import contextvars
-
-_request_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("request_id", default=None)
+_request_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    "request_id", default=None
+)
 _user_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("user_id", default=None)
 _span_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("span_id", default=None)
 
@@ -74,19 +75,16 @@ class PerformanceTracker:
     def __init__(self):
         self._start_time = time.time()
         self._milestones: list = []
-    
+
     def milestone(self, name: str):
         now = time.time()
         duration = round((now - self._start_time) * 1000, 2)
         self._milestones.append((name, now, duration))
         get_tracing_logger().info("milestone", name=name, duration_ms=duration)
-    
+
     def get_summary(self) -> list:
-        return [
-            {"name": name, "duration_ms": duration}
-            for name, _, duration in self._milestones
-        ]
-    
+        return [{"name": name, "duration_ms": duration} for name, _, duration in self._milestones]
+
     def get_total_ms(self) -> float:
         return round((time.time() - self._start_time) * 1000, 2)
 
@@ -112,26 +110,26 @@ _original_get_logger = _structlog.get_logger
 class TracingLogger:
     def __init__(self, name: str = None):
         self._logger = _original_get_logger(name)
-    
+
     def _log(self, method: str, event: str, **kwargs):
         kwargs = _inject_context(kwargs)
         getattr(self._logger, method)(event, **kwargs)
-    
+
     def info(self, event: str, **kwargs):
         self._log("info", event, **kwargs)
-    
+
     def debug(self, event: str, **kwargs):
         self._log("debug", event, **kwargs)
-    
+
     def warning(self, event: str, **kwargs):
         self._log("warning", event, **kwargs)
-    
+
     def warn(self, event: str, **kwargs):
         self._log("warning", event, **kwargs)
-    
+
     def error(self, event: str, **kwargs):
         self._log("error", event, **kwargs)
-    
+
     def exception(self, event: str, **kwargs):
         self._log("exception", event, **kwargs)
 
