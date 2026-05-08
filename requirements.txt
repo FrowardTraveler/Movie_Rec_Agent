@@ -1,0 +1,45 @@
+# Agent 包
+agent/
+agent/__init__.py
+agent/agent.py
+agent/config/__init__.py
+agent/config/agent_config.py
+agent/config/loader.py
+
+# Skills 包
+skills/
+skills/__init__.py
+skills/base.py
+skills/conversation/__init__.py
+skills/conversation/conversation_skill.py
+skills/recommend/__init__.py
+skills/recommend/recommend_skill.py
+
+# Tools 包
+tools/
+tools/__init__.py
+tools/recommend_tools.py
+tools/search_tools.py
+
+# Services 包
+services/
+services/__init__.py
+services/recommendation/__init__.py
+services/recommendation/engine_adapter.py
+services/recommendation/service.py
+services/cache/__init__.py
+services/cache/redis_cache.py
+
+# LLM 包
+llm/
+llm/__init__.py
+llm/llm_router.py
+
+# API 包
+api/
+api/__init__.py
+api/main.py
+
+# 配置
+configs/
+configs/config.yaml

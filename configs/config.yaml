@@ -1,0 +1,42 @@
+# Agent 配置
+agent:
+  name: "MovieRecAgent"
+  version: "0.1.0"
+  description: "智能电影推荐 Agent - MVP 版本"
+
+# LLM 模型配置
+llm:
+  provider: "${LLM_PROVIDER:-openai}"  # openai / local
+  model: "${LLM_MODEL_ID:-qwen-turbo}"
+  temperature: 0.3
+  max_tokens: 1000
+
+# Redis 缓存配置
+redis:
+  host: "${REDIS_HOST}"
+  port: 6379
+  db: 0
+  password: ""
+  cache_ttl: 300  # 5 分钟
+
+# JWT 认证配置（与传统推荐系统共享 secret_key）
+auth:
+  secret_key: "${JWT_SECRET_KEY}"
+  algorithm: "HS256"
+  enabled: false  # 默认关闭，生产环境设为 true
+
+# 传统推荐系统地址
+trad_rec:
+  base_url: "${TRAD_REC_BASE_URL}"
+
+# 推荐引擎配置
+recommendation:
+  engine_path: "../Movie_Rec_Agent/backend"
+  recall_top_k: 100
+  ranking_top_k: 20
+  final_top_k: 10
+
+# 日志配置
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
