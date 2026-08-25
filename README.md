@@ -1,298 +1,337 @@
-# Movie Rec Agent
+# 🎬 智能电影推荐平台 - Movie Rec Agent
 
-智能电影推荐 Agent - 基于 LLM + LangGraph + RAG + 推荐算法
+**双通道推荐系统 | 传统算法 + LLM Agent + RAG 增强 | 生产级高可用架构**
 
-[![CI Pipeline](https://github.com/YOUR_USERNAME/movie-rec-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/movie-rec-agent/actions/workflows/ci.yml)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.10+-blue?logo=python&logoColor=white" alt="Python Version">
+  <img src="https://img.shields.io/badge/FastAPI-0.104+-009688?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white" alt="Docker Compose">
+  <img src="https://img.shields.io/badge/PostgreSQL-15+-336791?logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+</p>
 
-## 项目简介
 
-这是一个工业级的智能电影推荐系统，融合了传统推荐算法和 LLM 能力，提供自然对话式的电影推荐体验。
+> 一个融合**传统协同过滤推荐**与**大语言模型对话推荐**的双通道智能电影推荐系统。采用三层 6 智能体协作架构，结合多路 RAG 检索增强与生产级容错设计，既保留算法推荐的低延迟与规模化优势，又提供自然语言交互、复杂条件筛选与可解释推荐的体验。
 
-### MVP 版本功能
+---
 
-- 基于 LangGraph 的 Agent 推理流程
-- 对话技能 (闲聊、情感回应)
-- 推荐技能 (调用推荐引擎)
-- Redis 缓存支持
-- FastAPI REST 接口
+## 📖 项目简介
 
-## 快速开始
+针对传统推荐系统交互生硬、无法满足复杂个性化需求的痛点，本项目提出「双通道互补」的架构方案：
 
-### 1. 环境准备
+- **被动浏览场景**：由传统推荐引擎提供毫秒级个性化首页、分类与排行榜推荐
+- **主动表达场景**：由 LLM Agent 通过自然语言对话完成复杂筛选、多轮修正与理由解释
+- 两通道共享用户画像与行为数据，偏好与反馈双向影响，实现体验一致的推荐效果
+
+项目同时完整落地了熔断器、分层超时、三级降级、全链路追踪等生产级能力，可直接作为中小型推荐系统的工程模板。
+
+---
+
+## ✨ 核心特性
+
+### 🚦 双通道推荐体系
+
+- **传统推荐通道**：经典 Recall → Ranking → ReRank 三段式流水线
+  - 多路召回：YouTubeDNN 向量召回 + ItemCF 协同过滤 + 偏好召回
+  - 精排模型：DeepFM 深度因子分解机 CTR 预估
+  - 重排策略：MMR 最大边际相关性打散，保障内容多样性
+- **LLM Agent 通道**：自然语言对话式推荐
+  - 支持复杂约束（年代、类型、情绪、时长组合筛选）
+  - 多轮对话修正，支持「换一批」「不要恐怖片」等反馈
+  - 每部电影生成关联用户偏好的个性化推荐理由
+
+### 🤖 三层 6 智能体协作架构
+
+参考 MACRec (SIGIR 2024) 与 AgentRec 设计理念，严格控制 LLM 调用成本：
+
+| 层级 | Agent 名称                | 核心职能                            | LLM 调用次数 |
+| ---- | ------------------------- | ----------------------------------- | ------------ |
+| 顶层 | Coordinator               | 规则路由、动态调度、结果融合        | 0 次         |
+| 中层 | Intent & Preference       | 深度意图解析、硬约束提取、偏好建模  | 1 次         |
+| 中层 | Retrieval & Filter        | 三路 RAG 检索、RRF 融合、硬规则过滤 | 0 次         |
+| 中层 | Ranking & Multi-Objective | LLM 语义精排、多目标打分、MMR 打散  | 1 次         |
+| 中层 | Explain & Dialogue        | 推荐理由生成、对话包装、主动追问    | 1 次         |
+| 底层 | Reflector                 | 在线轻量反思、离线批量复盘优化      | 异步离线     |
+
+> 单次请求仅 2~3 次 LLM 调用，端到端延迟控制在 1.5~2s
+
+### 🔍 多路 RAG 检索增强
+
+- 三路并行检索：BM25 全文检索 + pgvector 语义向量检索 + Redis 实时热度检索
+- RRF（倒数排名融合）算法统一排序，兼顾关键词匹配、语义相似度与群体热度
+- 内置个性化过滤：自动排除已观看、负向偏好类型影片
+- 最终输出 Top 30 候选集交付 LLM 精排
+
+### 🛡️ 生产级高可用
+
+- **三级降级机制**：Agent 故障 → 传统推荐引擎兜底 → 热门内容保底，服务零中断
+- **全依赖熔断器**：LLM、ES、PG、Redis 全覆盖，三态状态机自动熔断与恢复
+- **分层超时控制**：每个阶段独立时间预算，单环节阻塞不侵蚀全链路
+- **缓存防雪崩**：随机过期偏移 + 空结果缓存，规避穿透与雪崩风险
+- **安全加固**：JWT 认证、滑动窗口限流、敏感词过滤、Prompt 注入防护、Docker Secrets 密钥管理
+
+### 📊 企业级可观测性
+
+- Prometheus + Grafana 黄金信号监控大盘
+- 标准化 SLO 定义与分级告警规则
+- OpenTelemetry 全链路追踪，Metrics → Trace → Log 三信号串联
+- 结构化日志，全链路 request_id 可追溯
+
+---
+
+## 🏗️ 系统架构
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        客户端层 (Vue.js 3)                           │
+│  ┌───────────────┐            ┌───────────────────────┐             │
+│  │ 传统推荐界面   │            │  AI 助手侧边栏 (SSE)   │             │
+│  │ 首页 / 分类 / 榜单 │            │  对话式推荐 + 流式输出  │             │
+│  └───────┬───────┘            └───────────┬───────────┘             │
+└──────────┼────────────────────────────────┼─────────────────────────┘
+│                                │
+HTTP/REST                        HTTP/SSE
+│                                │
+┌──────────▼────────────────────────────────▼─────────────────────────┐
+│                     Web API 网关层 (:8001)                           │
+│  认证鉴权・速率限制・请求校验・CORS・路由分发                     │
+└──────────┬────────────────────────────────┬─────────────────────────┘
+│                                │
+┌──────────▼──────────┐          ┌──────────▼─────────────────────┐   │
+│ 传统推荐引擎 (:8000) │          │      LLM Agent 服务            │   │
+│ 召回→精排→重排流水线 │          │  6 智能体协作 + 多路 RAG + LLM 推理 │   │
+└──────────┬──────────┘          └──────────┬─────────────────────┘   │
+└───────────────┬───────────────┘
+▼
+┌───────────────────────────────┐
+│          共享数据层            │
+│  用户画像・行为历史・电影元数据│
+└───────────────────────────────┘
+▼
+┌──────────────┬──────────────┬────────────────┬──────────────────┐
+│  PostgreSQL  │    Redis     │ Elasticsearch  │  可观测性组件     │
+│  + pgvector  │ 缓存 / 画像 / 排行│  全文检索 / RAG  │ Prometheus+Jaeger │
+└──────────────┴──────────────┴────────────────┴──────────────────┘
+
+> 架构设计原则：两通道正常路径逻辑独立，故障路径逐级依赖降级；数据层全量共享，双向影响。
+
+---
+
+## 🎯 典型使用场景
+
+### 传统推荐通道
+
+- 打开首页自动获取「为你推荐」个性化影片
+- 按科幻、喜剧、动作等类型分类浏览
+- 查看实时热播榜、高分榜
+- 关键词精准搜索影片
+
+### LLM Agent 通道
+
+- 简单需求：`推荐几部科幻片`
+- 相似推荐：`推荐类似《星际穿越》的电影`
+- 复杂约束：`推荐 90 年代、无暴力、治愈系的日本动画`
+- 反馈修正：`刚才推荐的都看过，换小众一点的`
+- 情绪匹配：`今天心情不好，推荐点轻松的`
+
+---
+
+## 🛠️ 技术栈选型
+
+| 分类       | 技术选型                    | 版本   | 核心用途                         |
+| ---------- | --------------------------- | ------ | -------------------------------- |
+| 后端框架   | FastAPI                     | 0.104+ | API 服务，原生 async 与 SSE 支持 |
+| 前端框架   | Vue.js 3 + Tailwind CSS     | -      | 双通道交互界面                   |
+| 推荐算法   | TensorFlow                  | 2.15   | YouTubeDNN 召回、DeepFM 精排     |
+| 大模型     | 通义千问 / OpenAI / vLLM    | -      | 多 Provider 路由，支持本地部署   |
+| 关系数据库 | PostgreSQL + pgvector       | 15+    | 业务数据 + 向量索引存储          |
+| 缓存中间件 | Redis                       | 7.0+   | 缓存、用户画像、热度排行、会话   |
+| 搜索引擎   | Elasticsearch               | 9.2+   | 全文检索与 BM25 召回             |
+| 监控告警   | Prometheus + Grafana        | -      | 指标采集、可视化大盘、告警       |
+| 链路追踪   | OpenTelemetry + Jaeger      | -      | 分布式链路追踪                   |
+| 部署方式   | Docker Compose / Kubernetes | -      | 本地开发与生产编排               |
+
+---
+
+## 🚀 快速上手
+
+### 环境要求
+
+- Docker & Docker Compose v2.0+
+- 4GB+ 可用内存
+- 8GB+ 可用磁盘空间
+- （可选）GPU 用于本地 vLLM 模型部署
+
+### 1. 克隆项目
 
 ```bash
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
-
-# 安装依赖
-pip install -e .
+git clone https://github.com/your-username/movie-rec-agent.git
+cd movie-rec-agent
 ```
 
-### 2. 配置
-
-复制环境变量示例文件并填写配置：
+### 2. 配置环境变量
 
 ```bash
+# 复制环境变量模板
 cp .env.example .env
+
+# 编辑 .env 文件，填入必要配置
+# 至少配置 LLM_API_KEY、DATABASE_PASSWORD、JWT_SECRET
 ```
 
-编辑 `.env` 文件，填写必要的配置。
-
-### 3. 启动服务
+### 3. 一键启动全栈服务
 
 ```bash
-# 启动开发服务器
-python main.py
-
-# 或者使用 uvicorn
-uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+docker compose up -d
 ```
 
-服务启动后访问：
-
-- API 文档：<http://localhost:8000/docs>
-- 健康检查：<http://localhost:8000/health>
-
-### 4. 测试
+### 4. 验证服务状态
 
 ```bash
-# 运行所有测试
-pytest tests/ -v
+# 检查存活探针
+curl http://localhost:8001/health
+# 预期返回: {"status":"alive"}
 
-# 运行单个测试
-pytest tests/test_engine_adapter.py -v
-pytest tests/test_conversation_skill.py -v
+# 检查就绪探针
+curl http://localhost:8001/ready
+# 预期返回: {"status":"ready","checks":{"redis":"ok","es":"ok","pg":"ok","llm":"ok"}}
 ```
 
-## 项目结构
+### 5. 访问地址
+
+| 服务         | 访问地址                                                     | 说明                                       |
+| ------------ | ------------------------------------------------------------ | ------------------------------------------ |
+| 前端主站     | [http://localhost:3000](https://link.wtturl.cn/?target=http%3A%2F%2Flocalhost%3A3000&scene=im&aid=497858&lang=zh) | 双通道推荐主界面                           |
+| API 文档     | [http://localhost:8001/docs](https://link.wtturl.cn/?target=http%3A%2F%2Flocalhost%3A8001%2Fdocs&scene=im&aid=497858&lang=zh) | Swagger 交互式接口文档                     |
+| Grafana 监控 | [http://localhost:3001](https://link.wtturl.cn/?target=http%3A%2F%2Flocalhost%3A3001&scene=im&aid=497858&lang=zh) | 指标大盘与告警面板（默认账号 admin/admin） |
+| Jaeger 追踪  | [http://localhost:16686](https://link.wtturl.cn/?target=http%3A%2F%2Flocalhost%3A16686&scene=im&aid=497858&lang=zh) | 全链路调用追踪 UI                          |
+
+## 📂 项目结构
 
 ```
 movie-rec-agent/
-├── agent/                  # Agent 核心
-│   ├── agent.py           # LangGraph Agent 实现
-│   └── config/            # 配置管理
-├── skills/                 # 技能层
-│   ├── base.py            # 技能基类
-│   ├── conversation/      # 对话技能
-│   └── recommend/         # 推荐技能
-├── tools/                  # 工具层
-│   ├── recommend_tools.py # 推荐工具
-│   └── search_tools.py    # 搜索工具
-├── services/               # 服务层
-│   ├── recommendation/    # 推荐服务
-│   └── cache/             # 缓存服务
-├── llm/                    # LLM 管理
-│   └── llm_router.py      # LLM 路由器
-├── api/                    # API 层
-│   └── main.py            # FastAPI 主入口
-├── tests/                  # 测试
-├── configs/                # 配置文件
-├── main.py                 # 启动脚本
-└── pyproject.toml          # 项目配置
+├── api/                           # Web API 服务 (:8001)
+│   ├── controllers/               # 控制器层
+│   │   ├── recommend.py           # 传统推荐接口
+│   │   ├── agent.py               # Agent 对话接口
+│   │   ├── search.py              # 搜索接口
+│   │   ├── user.py                # 用户管理接口
+│   │   └── event.py               # 行为事件接口
+│   ├── agent/                     # LLM Agent 核心模块
+│   │   ├── agents/                # 6 个职能 Agent 实现
+│   │   ├── tools/                 # Agent 工具集（RAG检索、画像读取等）
+│   │   ├── registry.py            # 工具注册中心
+│   │   └── memory.py              # 上下文与记忆管理
+│   ├── services/                  # 支撑服务
+│   │   ├── event_service.py       # 事件收集服务
+│   │   ├── cache_service.py       # 缓存服务
+│   │   └── circuit_breaker.py     # 熔断器实现
+│   └── main.py                    # 应用入口
+├── engine/                        # 传统推荐引擎服务 (:8000)
+│   ├── recall/                    # 召回层
+│   ├── ranking/                   # 精排层
+│   └── reranking/                 # 重排层
+├── frontend/                      # 前端应用 (:3000)
+│   ├── views/                     # 页面组件
+│   └── components/                # 通用组件
+├── infrastructure/                # 基础设施配置
+│   ├── docker/                    # Docker Compose 编排
+│   ├── monitoring/                # Prometheus/Grafana 配置
+│   └── db/                        # 数据库初始化脚本
+├── tests/                         # 测试用例
+│   ├── unit/                      # 单元测试
+│   ├── integration/               # 集成测试
+│   └── e2e/                       # 端到端测试
+├── .env.example                   # 环境变量模板
+├── docker-compose.yml             # 全栈编排文件
+├── 技术架构.md                    # 详细架构设计文档
+├── README.md                      # 项目说明
+└── LICENSE                        # 许可证
 ```
 
-## API 接口
+## 🧪 测试说明
 
-### 推荐接口
+项目遵循测试金字塔设计，单元测试占 70%、集成测试占 20%、E2E 测试占 10%。
+
+运行测试
 
 ```bash
-curl -X POST http://localhost:8000/api/recommend \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user_id": "user_123",
-    "query": "推荐几部科幻片",
-    "top_k": 10
-  }'
+# 运行单元测试
+pytest tests/unit -v
+
+# 运行集成测试（需启动依赖服务）
+pytest tests/integration -v
+
+# 查看代码覆盖率
+pytest --cov=api --cov=engine
 ```
 
-### 健康检查
+### 核心覆盖范围
 
-```bash
-curl http://localhost:8000/health
-```
+- 核心算法：RRF 融合、过滤逻辑、MMR 打散（≥90% 覆盖率）
+- Agent 逻辑：路由规则、LLM 输出解析、降级兜底（≥85% 覆盖率）
+- 基础设施：熔断器状态机、限流器、缓存策略（≥85% 覆盖率）
 
-## 开发计划
+------
 
-- [x] MVP 版本 (基础 Agent + 推荐 + 对话)
-- [ ] RAG 知识库集成
-- [ ] 流式响应支持
-- [ ] 更多 Skills 实现
-- [ ] 性能优化
+## 📈 可观测性
 
-## 技术栈
+### 核心监控指标
 
-- **Web 框架**: FastAPI
-- **Agent 框架**: LangGraph
-- **LLM**: OpenAI GPT-4o-mini (可配置)
-- **缓存**: Redis
-- **推荐引擎**: 集成现有推荐系统
-- **测试**: pytest
+- **延迟**：P50 / P95 / P99 请求耗时
+- **流量**：QPS、活跃 SSE 连接数
+- **错误**：5xx 错误率、各依赖熔断状态
+- **饱和度**：CPU、内存、数据库连接池使用率
 
-## 许可证
+### 告警规则
 
-MIT
+- 🔴 严重：5xx 错误率 > 1% 持续 5 分钟、LLM 熔断器打开、核心依赖失联
+- 🟡 警告：P95 延迟 > 2.5s、SSE 连接数超阈值、日 LLM 调用量超预算
 
-<br />
+### 链路追踪
 
+通过 OpenTelemetry 采集跨服务调用链路，支持按 trace_id 串联指标、链路与日志，秒级定位性能瓶颈。
 
-## 升级为工业级项目
-1. JWT 认证：
-  - 用传统推荐系统的 AUTH_SECRET_KEY 
-  - 通过 AUTH_ENABLED 环境变量控制开关
-  - 保护了 /api/history 和 /api/profile 端点
-2. 输入校验：
-  - Pydantic Field 限制： user_id 最长 64 字符，query 最长 500 字符， top_k 范围 1-20
-  - XSS 过滤： field_validator 移除 HTML 标签和 script/style 内容
+------
 
-3. 用户访问控制：
-  - 认证用户只能访问自己的对话历史
-  - 认证用户只能修改自己的偏好信息
+## 🛤️ 版本演进路线
 
-4. 速率限制：
-  - 基于 Redis 滑动窗口，每分钟 20 次请求
-  - 优先按 user_id 限流（认证用户），否则按 IP
-  - 返回标准 429 状态码 + Retry-After 头
+表格
 
-5. Prometheus 指标：暴露 /metrics 端点供 Prometheus 抓取
-  - 收集的指标：
-    - http_requests_total — QPS（按 method/endpoint/status）
-    - http_request_duration_seconds — 请求延迟直方图
-    - cache_hits_total / cache_misses_total — 缓存命中/未命中
-    - llm_calls_total / llm_call_duration_seconds — LLM 调用统计
-    - active_connections — 活跃 SSE 连接数
-    - rate_limit_exceeded_total — 限流触发次数
-6.  Prometheus 指标监控、Grafana 仪表盘
+| 版本          | 核心目标                                     | 状态     |
+| ------------- | -------------------------------------------- | -------- |
+| v1.0 基础版   | 双通道基础功能、推荐引擎、用户画像共享       | ✅ 已完成 |
+| v3.0 架构升级 | 三层 6 智能体落地、三路 RAG、混合排序        | ✅ 已完成 |
+| v3.1 生产加固 | 三级降级、全依赖熔断、分层超时、可观测体系   | ✅ 已完成 |
+| v3.2 效果优化 | A/B 分流实验、离线复盘闭环、动态权重自动调优 | ⏳ 规划中 |
 
-7. 用户反馈收集：推荐结果评分/点赞/踩 存储到redis ，用户画像积累（喜欢/不喜欢的电影， 传统系统评分自动同步到Agent 越来越个性化
-8. 添加A/B 测试：根据用户画像，随机分配用户到不同的推荐策略（传统推荐系统 vs LLM 推荐系统），评估其效果
+------
 
-9. 在线推荐的指标评估，埋点：
-  - 用户行为事件追踪：impression（展示）、click（点击）、detail_view（查看详情）、rating（评分）、like/dislike（点赞/踩）
-  - 实时计算推荐质量指标：
-    * CTR (点击率) = 点击次数 / 展示次数
-    * 点赞率 / 踩率
-    * 平均评分 & 评分参与率
-    * Top-K 命中率 (用户评分≥4 的电影是否在推荐前K个)
-    * 负反馈率 (评分≤2 或踩的比例)
-    * 用户满意度指数 = (点赞×1 + 高分×0.8 + 中分×0.5 - 踩×1) / 总推荐数
-    * 推荐多样性 & 新颖度
-  - A/B 测试对比报告：LLM推荐 vs 传统推荐的完整指标对比
-  - Prometheus 指标扩展：recommendation_events_total, recommendation_ctr, recommendation_hit_rate 等
-  - API 接口：
-    * POST /api/events - 记录用户行为事件
-    * GET /api/evaluation/metrics - 获取评估指标
-    * GET /api/evaluation/abtest/report - 获取 A/B 测试对比报告
-  
-10. ReAct模式
-11. 容错和重试机制不完善
-```
-现状：部分服务有try-catch，但没有系统性容错
-- 没有重试机制（LLM超时、网络抖动直接失败）
-- 没有熔断器（外部服务挂了会继续请求）
-- 没有降级策略（推荐不可用时无回退方案）
-```
-优化建议 ：加入 tenacity 重试 + circuitbreaker 熔断
+## 🤝 贡献指南
 
-现在（熔断+重试+降级）:
-Agent → CircuitBreaker.call_llm()
-         ├── 重试2次（指数退避：0.5s → 1s → 2s）
-         ├── 连续5次失败 → 熔断60秒
-         └── 熔断期间 → 降级到MockLLM ✅
+欢迎提交 Issue 和 Pull Request！
 
-Agent → trad_rec.get_recommendations()
-         ├── CircuitBreaker保护
-         ├── 3次失败熔断30秒
-         └── 熔断时返回空数组 ✅
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
 
-Agent → redis.update_profile()
-         ├── CircuitBreaker保护
-         ├── 5次失败熔断60秒
-         └── 熔断时静默跳过 ✅
+提交前请确保代码通过单元测试与代码规范检查。
 
-12. 异步处理和消息队列缺失
-```
-现状：部分后台任务是同步的
-- 用户事件记录同步调用 HTTP
-- 指标上报阻塞主流程
-- 没有批量处理机制
-```
-优化建议 ：用 Redis Streams 或 Celery 做异步任务队列  
+------
 
-之前（同步阻塞）：
-用户请求 → Agent 处理 → 等待写入记忆(50ms) → 等待写入对话历史(30ms) → 返回结果
-         总耗时 = Agent时间 + 80ms
+## 📄 相关文档
 
-现在（异步队列）：
-用户请求 → Agent 处理 → 入队(5ms) → 返回结果 ✅
-                                        ↓ 后台 Worker 处理
-                                   写入记忆 + 写入对话历史（不阻塞）
-         总耗时 = Agent时间 + 5ms（快 16 倍！）
+- [技术架构完整文档](./技术架构.md)：详细的架构设计、模块拆解、API 规范、可观测性方案
+- [核心模块实现说明](./CORE_MODULE_IMPLEMENTATION.md)：代码结构与方法签名
+- [系统架构原始方案](./SYSTEM_ARCHITECTURE.md)：重构前完整技术方案
 
-```python
-# 1. 创建异步任务队列
-class AsyncTaskQueue:
-    """基于 Redis Streams 的异步任务队列"""
-    
-    async def enqueue(self, task_type: str, payload: dict):
-        """把任务放入队列（不阻塞主流程）"""
-        await redis.xadd("task_queue", {
-            "type": task_type,
-            "data": json.dumps(payload),
-            "timestamp": str(time.time())
-        })
-    
-    async def process_loop(self):
-        """后台消费循环"""
-        while True:
-            messages = await redis.xread({"task_queue": last_id}, block=1000)
-            for msg in messages:
-                await self._handle_task(msg)
-                await redis.xdel("task_queue", msg_id)
-```
-13. ✅ 全链路追踪 ：request_id 贯穿 API → Agent → Backend
-如果现在用户反馈系统服务质量问题，没有request_id，就很难定位问题,有了request_id，就可以查看整个请求的完整链路，快速定位到问题所在
+------
 
-具体方案思路 ：利用 Python 的 contextvars （异步上下文变量），在 API 入口处生成 request_id，整个调用链自动携带。
-```python
-# 方案：contextvars + structlog 全局绑定
+## 📄 许可证
 
-# 1. 创建全局上下文变量
-import contextvars
-request_id_var = contextvars.ContextVar("request_id", default=None)
+本项目采用 MIT 许可证，详见 [LICENSE](./LICENSE) 文件。
 
-# 2. structlog 全局配置自动注入
-structlog.configure(
-    processors=[
-        structlog.contextvars.merge_contextvars,  # 自动注入 contextvars 到日志
-        structlog.processors.add_log_level,
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.dev.ConsoleRenderer()
-    ]
-)
+------
 
-# 3. API 入口处设置 request_id
-async def generate_stream():
-    request_id = str(uuid.uuid4())
-    request_id_var.set(request_id)
-    
-    # 之后所有日志自动携带 request_id
-    logger.info("开始处理")  # → {"request_id": "abc-123", "event": "开始处理"}
-```
-
-还可以顺便添加性能追踪：
-```python
-logger.info("LLM 调用完成", duration_ms=round((time.time() - start) * 1000, 2))
-
-# 最终输出结构化性能数据：
-# abc-123-def | 性能统计:
-#   - Intent 分析: 2.1s
-#   - ReAct 循环: 18.5s
-#   - LLM 调用(共3次): 25.8s
-#   - 传统推荐: 0.8s
-#   - MemoryBank: 0.05s
-#   - 总耗时: 28.5s
-```
+<p align="center"> 如果项目对你有帮助，欢迎点个 Star ⭐ 支持一下～ </p> 
